@@ -155,6 +155,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
 以上的两种方法看着都不是那么的实用，因为有关用户名与密码的操作一般都是放在数据库里面。
 
+# 二、数据库用户名密码认证授权
+
 这个时候需要再次提出`UserDetailsService`接口，用于在数据库获取用户名和密码
 
 使用方法：自定义实现类设置
