@@ -1,6 +1,8 @@
 package com.example.security.service;
 
-import com.example.security.StudentMapper;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.example.security.entity.Student;
+import com.example.security.mapper.StudentMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.AuthorityUtils;
@@ -26,7 +28,23 @@ public class MyUserServiceDetails implements UserDetailsService {
      */
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+
+        System.out.println(username);
+
+
+        //根据用户名查询数据库
+        QueryWrapper<Student> wrapper = new QueryWrapper<>();
+        wrapper.eq("username",username);
+        Student student = studentMapper.selectOne(wrapper);
+
+        if (student==null){
+            throw new UsernameNotFoundException("用户名不存在");
+        }
+
         List<GrantedAuthority> auths = AuthorityUtils.commaSeparatedStringToAuthorityList("role");
-        return new User("mary",new BCryptPasswordEncoder().encode("123"),auths);
+
+        return new User(student.getUsername(),new BCryptPasswordEncoder().encode(student.getPassword()),auths);
     }
+
+
 }

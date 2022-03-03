@@ -1,4 +1,4 @@
-package com.example.security;
+package com.example.security.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.example.security.entity.Student;
