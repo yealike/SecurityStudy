@@ -29,9 +29,6 @@ public class MyUserServiceDetails implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
 
-        System.out.println(username);
-
-
         //根据用户名查询数据库
         QueryWrapper<Student> wrapper = new QueryWrapper<>();
         wrapper.eq("username",username);

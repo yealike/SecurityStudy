@@ -155,8 +155,6 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
 以上的两种方法看着都不是那么的实用，因为有关用户名与密码的操作一般都是放在数据库里面。
 
-# 二、数据库用户名密码认证授权
-
 这个时候需要再次提出`UserDetailsService`接口，用于在数据库获取用户名和密码
 
 使用方法：自定义实现类设置
@@ -205,22 +203,22 @@ public class MyUserServiceDetails implements UserDetailsService {
 1.整合MyBatisPlus引入相关依赖
 
 ```xml
-		<!--lombok依赖-->
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-        </dependency>
-        <!--mybatis-plus依赖-->
-        <dependency>
-            <groupId>com.baomidou</groupId>
-            <artifactId>mybatis-plus-boot-starter</artifactId>
-            <version>3.3.1.tmp</version>
-        </dependency>
-        <!--mysql依赖-->
-        <dependency>
-            <groupId>mysql</groupId>
-            <artifactId>mysql-connector-java</artifactId>
-        </dependency>
+<!--lombok依赖-->
+<dependency>
+    <groupId>org.projectlombok</groupId>
+    <artifactId>lombok</artifactId>
+</dependency>
+<!--mybatis-plus依赖-->
+<dependency>
+    <groupId>com.baomidou</groupId>
+    <artifactId>mybatis-plus-boot-starter</artifactId>
+    <version>3.3.1.tmp</version>
+</dependency>
+<!--mysql依赖-->
+<dependency>
+    <groupId>mysql</groupId>
+    <artifactId>mysql-connector-java</artifactId>
+</dependency>
 ```
 
 2.创建数据库和数据库表
@@ -257,6 +255,91 @@ public interface StudentMapper extends BaseMapper<Student> {
 ```
 
 5.在MyUserDetailsService调用mapper里面的方法查询数据库进行用户认证
+
+```java
+@Service("userDetailsService")
+public class MyUserServiceDetails implements UserDetailsService {
+    @Autowired
+    private StudentMapper studentMapper;
+
+    /**
+     *
+     * @param username 得到表单传过来的用户名
+     * @return 返回User对象
+     * @throws UsernameNotFoundException
+     */
+    @Override
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+
+        System.out.println(username);
+
+        //根据用户名查询数据库
+        QueryWrapper<Student> wrapper = new QueryWrapper<>();
+        wrapper.eq("username",username);
+        Student student = studentMapper.selectOne(wrapper);
+
+        if (student==null){
+            throw new UsernameNotFoundException("用户名不存在");
+        }
+
+        List<GrantedAuthority> auths = AuthorityUtils.commaSeparatedStringToAuthorityList("role");
+
+        return new User(student.getUsername(),new BCryptPasswordEncoder().encode(student.getPassword()),auths);
+    }
+
+
+}
+```
+
+## 2.4自定义登录页面
+
+自定义页面不需要认证也可以访问
+
+1.在配置类中实现相关配置
+
+```java
+/**
+ * 通过这个类可以实现自定义登录页面
+ * @param http 含有HttpSecurity的configure重载方法
+ * @throws Exception
+ */
+@Override
+protected void configure(HttpSecurity http) throws Exception {
+    //自定义页面设置
+    http.formLogin()
+            .loginPage("/login.html")//登录页面设置
+            .loginProcessingUrl("/user/login")//登录访问路径
+            .defaultSuccessUrl("/test/index").permitAll()//登录成功后跳转路径
+            .and().authorizeRequests()//定义哪些资源受保护哪些资源不受保护
+            .antMatchers("/","/test/hello","user/login").permitAll()//设置哪些路径可以直接访问不需要认证
+            .anyRequest().authenticated()//所有请求都可以访问
+            .and().csrf().disable();//关闭csrf的防护模式
+}
+```
+
+2.创建相关页面和controller
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>登录页</title>
+</head>
+<body>
+<!--登录的参数必须叫username和password-->
+<form action="/user/login" method="post">
+    用户名：<input type="text" name="username">
+    <br>
+    密码：<input type="text" name="password">
+    <br>
+    <button type="submit">登录</button>
+</form>
+</body>
+</html>
+```
+
+
 
 
 
